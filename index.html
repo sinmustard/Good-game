@@ -26,6 +26,8 @@
             align-items: center;
             min-height: 100vh;
             transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
         }
 
         body::before {
@@ -51,7 +53,7 @@
             flex-direction: column;
             gap: 24px;
             position: relative;
-            z-index: 1;
+            z-index: 10; /* 표지판 버튼보다 위에 위치하도록 조정 */
         }
 
         header {
@@ -165,9 +167,129 @@
             50% { transform: scale(1.2); color: #2ecc71; }
             100% { transform: scale(1); }
         }
+
+        /* ========================================================
+           ✨ 이스터에그: 표지판 이펙트 오버레이 스타일 (한글화)
+           ======================================================== */
+        #sign-easteregg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            z-index: 100;
+            pointer-events: none; /* 클릭 방해 금지 */
+            opacity: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #sign-easteregg.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .sign-board {
+            background: linear-gradient(135deg, #8d6e63 0%, #5d4037 100%);
+            border: 4px solid #f5f5f5;
+            border-radius: 12px;
+            padding: 18px 40px;
+            color: white;
+            font-family: 'Pretendard', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+            text-align: center;
+            position: relative;
+        }
+
+        .sign-board::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 20px;
+            background-color: #5d4037;
+            border-left: 2px solid #f5f5f5;
+            border-right: 2px solid #f5f5f5;
+        }
+
+        /* 한글 '공감' 카드 스타일 (부드러운 핑크-레드) */
+        .empathy-style {
+            background: linear-gradient(135deg, #ff7b90 0%, #e91e63 100%) !important;
+            box-shadow: 0 0 35px rgba(233, 30, 99, 0.6) !important;
+        }
+
+        /* 한글 '예절' 카드 스타일 (싱그러운 그린-에메랄드) */
+        .etiquette-style {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%) !important;
+            box-shadow: 0 0 35px rgba(39, 174, 96, 0.6) !important;
+        }
+
+        /* ========================================================
+           👉 일러스트 표지판 터치 영역(Hotspot) 설정 
+           ======================================================== */
+        .sign-hotspot {
+            position: absolute;
+            width: 180px;
+            height: 140px;
+            cursor: pointer;
+            z-index: 5;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.01); /* 눈에 보이지 않는 클릭 가이드 영역 */
+            transition: transform 0.2s ease;
+        }
+
+        .sign-hotspot:hover {
+            transform: scale(1.05);
+        }
+
+        /* 일러스트 배경의 표지판 위치에 최적화 (반응형 대응) */
+        #left-sign-trigger {
+            left: calc(50% - 460px);
+            bottom: 33%;
+        }
+
+        #right-sign-trigger {
+            right: calc(50% - 460px);
+            bottom: 33%;
+        }
+
+        /* 데스크톱 크기가 아닐 때(모바일 등)의 핫스팟 크기 조정 */
+        @media (max-width: 1000px) {
+            .sign-hotspot {
+                width: 100px;
+                height: 80px;
+            }
+            #left-sign-trigger {
+                left: 10px;
+                bottom: 40%;
+            }
+            #right-sign-trigger {
+                right: 10px;
+                bottom: 40%;
+            }
+        }
     </style>
 </head>
 <body>
+
+    <!-- 👉 왼쪽 표지판(공감) 클릭용 투명 핫스팟 -->
+    <div id="left-sign-trigger" class="sign-hotspot" title="공감 표지판"></div>
+
+    <!-- 👉 오른쪽 표지판(예절) 클릭용 투명 핫스팟 -->
+    <div id="right-sign-trigger" class="sign-hotspot" title="예절 표지판"></div>
+
+    <!-- ✨ 이스터에그 표지판 엘리먼트 -->
+    <div id="sign-easteregg">
+        <div id="sign-text" class="sign-board">공감과 존중</div>
+    </div>
 
     <div id="game-container">
         <header>
@@ -187,7 +309,8 @@
                 <p id="npc-dialogue">로딩 중...</p>
             </div>
             <div id="choice-buttons">
-                </div>
+                <!-- 동적 버튼 생성 -->
+            </div>
         </main>
     </div>
 
@@ -286,10 +409,17 @@
                 this.etiquetteEl = document.getElementById('etiquette-score');
                 this.progressTextEl = document.getElementById('progress-text');
                 this.progressBarEl = document.getElementById('progress-bar');
+
+                // 이스터에그 및 트리거 엘리먼트 캐싱
+                this.easterEggEl = document.getElementById('sign-easteregg');
+                this.signTextEl = document.getElementById('sign-text');
+                this.leftTrigger = document.getElementById('left-sign-trigger');
+                this.rightTrigger = document.getElementById('right-sign-trigger');
             }
 
             init() {
                 this.render();
+                this.bindEasterEggTriggers();
             }
 
             render() {
@@ -326,11 +456,64 @@
                 }
             }
 
+            // 👉 실제 일러스트 표지판 클릭 이벤트 바인딩
+            bindEasterEggTriggers() {
+                // 왼쪽 표지판 클릭 -> '공감과 존중' 팝업
+                this.leftTrigger.addEventListener('click', () => {
+                    this.showManualEasterEgg("공감과 존중", "empathy-style");
+                });
+
+                // 오른쪽 표지판 클릭 -> '예의와 조화' 팝업
+                this.rightTrigger.addEventListener('click', () => {
+                    this.showManualEasterEgg("예의와 조화", "etiquette-style");
+                });
+            }
+
+            // 직접 터치/클릭을 통해 명시적으로 띄우는 이스터에그 컨트롤러
+            showManualEasterEgg(text, styleClass) {
+                this.signTextEl.className = 'sign-board';
+                this.signTextEl.textContent = text;
+                this.signTextEl.classList.add(styleClass);
+
+                this.easterEggEl.classList.add('show');
+                
+                // 수동 터치시 효과를 좀 더 누릴 수 있도록 1.2초 후 종료
+                setTimeout(() => {
+                    this.easterEggEl.classList.remove('show');
+                }, 1200);
+            }
+
+            // 선택지 스코어링 시스템 연동 이스터에그
+            triggerEasterEgg(choice) {
+                if (choice.empathy <= 0 && choice.etiquette <= 0) return;
+
+                this.signTextEl.className = 'sign-board';
+
+                if (choice.empathy >= choice.etiquette) {
+                    this.signTextEl.textContent = "공감과 존중";
+                    this.signTextEl.classList.add('empathy-style');
+                } else {
+                    this.signTextEl.textContent = "예의와 조화";
+                    this.signTextEl.classList.add('etiquette-style');
+                }
+
+                this.easterEggEl.classList.add('show');
+
+                setTimeout(() => {
+                    this.easterEggEl.classList.remove('show');
+                }, 1000);
+            }
+
             nextStep(choice) {
+                this.triggerEasterEgg(choice);
+
                 this.empathy += choice.empathy;
                 this.etiquette += choice.etiquette;
                 this.currentStep = choice.next;
-                this.render();
+
+                setTimeout(() => {
+                    this.render();
+                }, 400);
             }
 
             showEndingEvaluation() {
