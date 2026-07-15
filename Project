@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마음의 온도 (Warmth of Minds)</title>
+    <style>
+        /* 기본 테마 및 레이아웃 설정 */
+        :root {
+            --bg-color: #f7f9fc;
+            --card-bg: #ffffff;
+            --primary-color: #ff7a00; /* 따뜻한 주황색 */
+            --text-color: #2c3e50;
+            --border-radius: 16px;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.5s ease;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* 헤더 영역 (스탯 표시) */
+        header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #f0f3f6;
+            padding-bottom: 15px;
+        }
+
+        .stat {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #7f8c8d;
+        }
+
+        .stat span {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            font-weight: 800;
+            transition: all 0.3s ease;
+        }
+
+        /* 메인 상황판 영역 */
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #situation-box {
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background-color: #fafbfc;
+            border: 1px solid #eef1f6;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        #npc-dialogue {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            font-weight: 500;
+            margin: 0;
+            word-break: keep-all;
+        }
+
+        /* 선택지 버튼 영역 */
+        #choice-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .choice-btn {
+            background-color: #f1f3f5;
+            border: none;
+            border-radius: 10px;
+            padding: 16px 20px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-color);
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+            line-height: 1.4;
+        }
+
+        .choice-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 122, 0, 0.2);
+        }
+
+        .choice-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 진행 상황 연출 효과를 위한 CSS */
+        .status-up {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); color: #2ecc71; }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <header>
+            <div class="stat">공감 지수: <span id="empathy-score">0</span></div>
+            <div class="stat">예절 점수: <span id="etiquette-score">0</span></div>
+        </header>
+        
+        <main>
+            <div id="situation-box">
+                <p id="npc-dialogue">로딩 중...</p>
+            </div>
+            <div id="choice-buttons">
+                </div>
+        </main>
+    </div>
+
+    <script>
+        // 시나리오 데이터베이스 (여기에 대사를 추가하면 자동으로 확장됩니다)
+        const scenarios = {
+            start: {
+                dialogue: "지하철에서 무거운 짐을 들고 계신 노인분과 눈이 마주쳤습니다. 어떻게 하시겠습니까?",
+                choices: [
+                    {
+                        text: "정중하게 자리를 양보하며 미소 지어 보인다.",
+                        empathy: 10,
+                        etiquette: 20,
+                        next: "scenario_thankful"
+                    },
+                    {
+                        text: "짐을 대신 선반에 올려드리겠다고 조심스럽게 여쭤본다.",
+                        empathy: 20,
+                        etiquette: 10,
+                        next: "scenario_thankful"
+                    },
+                    {
+                        text: "조금 어색해서 슬쩍 눈을 피하고 다른 곳을 바라본다.",
+                        empathy: 0,
+                        etiquette: 0,
+                        next: "scenario_awkward"
+                    }
+                ]
+            },
+            scenario_thankful: {
+                dialogue: "어르신이 '젊은이 고마워요'라며 따뜻하게 답해주셨습니다. 이때 당신의 대답은?",
+                choices: [
+                    {
+                        text: "'아니에요, 건강하세요!'라며 가볍게 인사한다.",
+                        empathy: 15,
+                        etiquette: 15,
+                        next: "scenario_office"
+                    },
+                    {
+                        text: "눈인사만 가볍게 건네고 다음 정거장을 준비한다.",
+                        empathy: 5,
+                        etiquette: 10,
+                        next: "scenario_office"
+                    }
+                ]
+            },
+            scenario_awkward: {
+                dialogue: "주위 승객이 대신 자리를 권유합니다. 어르신이 멋쩍어하시며 자리에 앉으십니다.",
+                choices: [
+                    {
+                        text: "마음이 약간 무거워졌지만 다음 일을 생각한다.",
+                        empathy: -5,
+                        etiquette: 0,
+                        next: "scenario_office"
+                    }
+                ]
+            },
+            scenario_office: {
+                dialogue: "회사 사무실에 도착했습니다. 동료가 커피를 쏟아 곤란해하고 있습니다.",
+                choices: [
+                    {
+                        text: "아무 말 없이 티슈를 듬뿍 뽑아서 건네준다.",
+                        empathy: 20,
+                        etiquette: 10,
+                        next: "ending"
+                    },
+                    {
+                        text: "'어머, 괜찮아요? 다치진 않으셨어요?'라며 상태를 먼저 묻는다.",
+                        empathy: 25,
+                        etiquette: 15,
+                        next: "ending"
+                    },
+                    {
+                        text: "바빠 보이니 조용히 지나쳐 내 자리로 간다.",
+                        empathy: 0,
+                        etiquette: 0,
+                        next: "ending"
+                    }
+                ]
+            },
+            ending: {
+                dialogue: "오늘 하루가 마무리되었습니다. 당신이 머문 자리는 다른 이들의 마음을 조금 더 따뜻하게 만들었을까요?",
+                choices: [
+                    {
+                        text: "내 마음의 온도 측정하기",
+                        empathy: 0,
+                        etiquette: 0,
+                        next: "show_result"
+                    }
+                ]
+            }
+        };
+
+        // 게임 핵심 엔진 클래스
+        class HeartEngine {
+            constructor() {
+                this.empathy = 0;
+                this.etiquette = 0;
+                this.currentId = 'start';
+
+                // DOM 요소 매핑
+                this.dialogueEl = document.getElementById('npc-dialogue');
+                this.choicesEl = document.getElementById('choice-buttons');
+                this.empathyEl = document.getElementById('empathy-score');
+                this.etiquetteEl = document.getElementById('etiquette-score');
+            }
+
+            init() {
+                this.render();
+            }
+
+            render() {
+                // 특별 엔딩 연출 분기 처리
+                if (this.currentId === 'show_result') {
+                    this.showEndingEvaluation();
+                    return;
+                }
+
+                const currentScenario = scenarios[this.currentId];
+                this.dialogueEl.textContent = currentScenario.dialogue;
+                this.choicesEl.innerHTML = '';
+
+                // 스탯 UI 반영
+                this.updateScoreUI(this.empathyEl, this.empathy);
+                this.updateScoreUI(this.etiquetteEl, this.etiquette);
+
+                // 버튼 생성 루프
+                currentScenario.choices.forEach(choice => {
+                    const button = document.createElement('button');
+                    button.className = 'choice-btn';
+                    button.textContent = choice.text;
+                    button.addEventListener('click', () => this.nextStep(choice));
+                    this.choicesEl.appendChild(button);
+                });
+            }
+
+            updateScoreUI(element, value) {
+                if (parseInt(element.textContent) !== value) {
+                    element.textContent = value;
+                    element.classList.add('status-up');
+                    setTimeout(() => element.classList.remove('status-up'), 500);
+                }
+            }
+
+            nextStep(choice) {
+                this.empathy += choice.empathy;
+                this.etiquette += choice.etiquette;
+                this.currentId = choice.next;
+                this.render();
+            }
+
+            showEndingEvaluation() {
+                const total = this.empathy + this.etiquette;
+                let title = "";
+                let evaluation = "";
+                let bgGradient = "";
+
+                if (total >= 70) {
+                    title = "인간 보일러 🌡️ (온도 100°C)";
+                    evaluation = "당신이 머문 곳은 항상 봄날이군요. 탁월한 공감력과 세심한 예절로 주변 사람들의 하루를 치유하는 마법사 같은 분입니다.";
+                    bgGradient = "#fff5eb";
+                } else if (total >= 40) {
+                    title = "따뜻한 미소 😊 (온도 36.5°C)";
+                    evaluation = "지킬 예의를 지키고 남의 마음을 헤아릴 줄 아는 표준적이고 온화한 분입니다. 당신 덕분에 세상이 조금 더 살만해집니다.";
+                    bgGradient = "#f6fbf7";
+                } else {
+                    title = "차가운 도시인 🧊 (온도 10°C)";
+                    evaluation = "악의는 없지만 가끔은 타인의 시선이나 상처에 무감각한 편입니다. 한 번만 먼저 말을 건네보는 건 어떨까요?";
+                    bgGradient = "#f0f4f8";
+                }
+
+                // 배경색을 결과에 따라 변형
+                document.body.style.backgroundColor = bgGradient;
+
+                this.dialogueEl.innerHTML = `<strong style="font-size: 1.3rem; color: var(--primary-color);">${title}</strong><br><br>${evaluation}`;
+                this.choicesEl.innerHTML = '';
+
+                // 다시 시작 버튼
+                const restartBtn = document.createElement('button');
+                restartBtn.className = 'choice-btn';
+                restartBtn.style.textAlign = 'center';
+                restartBtn.textContent = '🔄 다시 시작해서 더 나은 내일 만들기';
+                restartBtn.addEventListener('click', () => {
+                    this.empathy = 0;
+                    this.etiquette = 0;
+                    this.currentId = 'start';
+                    document.body.style.backgroundColor = 'var(--bg-color)';
+                    this.render();
+                });
+                this.choicesEl.appendChild(restartBtn);
+            }
+        }
+
+        // DOM 로드 후 게임 기동
+        window.addEventListener('DOMContentLoaded', () => {
+            const game = new HeartEngine();
+            game.init();
+        });
+    </script>
+</body>
+</html>
