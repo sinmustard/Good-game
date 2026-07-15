@@ -7,56 +7,76 @@
     <style>
         /* 기본 테마 및 레이아웃 설정 */
         :root {
-            --bg-color: #f7f9fc;
-            --card-bg: #ffffff;
-            --primary-color: #ff7a00; /* 따뜻한 주황색 */
+            --card-bg: rgba(255, 255, 255, 0.92); /* 배경 이미지를 고려해 카드 뒤쪽을 살짝 반투명하게 */
+            --primary-color: #ff7a00;
             --text-color: #2c3e50;
-            --border-radius: 16px;
-            --shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --border-radius: 20px;
+            --shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
         }
 
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            /* 15년 차 선배님의 단골 리소스 적용! */
+            background-image: url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed; /* 스크롤 시에도 배경 고정 */
+            
             margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            transition: background-color 0.5s ease;
+            transition: all 0.5s ease;
+        }
+
+        /* 배경 이미지 위에 약간의 어두운 필터를 씌워 카드 집중도 향상 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(44, 62, 80, 0.3); /* 이미지 톤 다운용 레이어 */
+            z-index: -1;
         }
 
         #game-container {
             width: 100%;
             max-width: 500px;
             background: var(--card-bg);
+            /* 모던한 글래스모피즘(Glassmorphism) 효과 추가 */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
-            padding: 30px;
+            padding: 35px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             gap: 24px;
+            position: relative;
+            z-index: 1;
         }
 
         /* 헤더 영역 (스탯 표시) */
         header {
             display: flex;
             justify-content: space-between;
-            border-bottom: 2px solid #f0f3f6;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
             padding-bottom: 15px;
         }
 
         .stat {
             font-size: 0.95rem;
-            font-weight: 600;
-            color: #7f8c8d;
+            font-weight: 700;
+            color: #5d6d7e;
         }
 
         .stat span {
             color: var(--primary-color);
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             font-weight: 800;
             transition: all 0.3s ease;
         }
@@ -74,8 +94,8 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            background-color: #fafbfc;
-            border: 1px solid #eef1f6;
+            background-color: rgba(250, 251, 252, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.05);
             border-radius: 12px;
             padding: 20px;
         }
@@ -96,9 +116,9 @@
         }
 
         .choice-btn {
-            background-color: #f1f3f5;
-            border: none;
-            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
             padding: 16px 20px;
             font-size: 0.95rem;
             font-weight: 500;
@@ -107,20 +127,21 @@
             text-align: left;
             transition: all 0.2s ease;
             line-height: 1.4;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
 
         .choice-btn:hover {
             background-color: var(--primary-color);
+            border-color: var(--primary-color);
             color: white;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 122, 0, 0.2);
+            box-shadow: 0 5px 15px rgba(255, 122, 0, 0.3);
         }
 
         .choice-btn:active {
             transform: translateY(0);
         }
 
-        /* 진행 상황 연출 효과를 위한 CSS */
         .status-up {
             animation: pulse 0.5s ease-in-out;
         }
@@ -150,7 +171,6 @@
     </div>
 
     <script>
-        // 시나리오 데이터베이스 (여기에 대사를 추가하면 자동으로 확장됩니다)
         const scenarios = {
             start: {
                 dialogue: "지하철에서 무거운 짐을 들고 계신 노인분과 눈이 마주쳤습니다. 어떻게 하시겠습니까?",
@@ -239,14 +259,12 @@
             }
         };
 
-        // 게임 핵심 엔진 클래스
         class HeartEngine {
             constructor() {
                 this.empathy = 0;
                 this.etiquette = 0;
                 this.currentId = 'start';
 
-                // DOM 요소 매핑
                 this.dialogueEl = document.getElementById('npc-dialogue');
                 this.choicesEl = document.getElementById('choice-buttons');
                 this.empathyEl = document.getElementById('empathy-score');
@@ -258,7 +276,6 @@
             }
 
             render() {
-                // 특별 엔딩 연출 분기 처리
                 if (this.currentId === 'show_result') {
                     this.showEndingEvaluation();
                     return;
@@ -268,11 +285,9 @@
                 this.dialogueEl.textContent = currentScenario.dialogue;
                 this.choicesEl.innerHTML = '';
 
-                // 스탯 UI 반영
                 this.updateScoreUI(this.empathyEl, this.empathy);
                 this.updateScoreUI(this.etiquetteEl, this.etiquette);
 
-                // 버튼 생성 루프
                 currentScenario.choices.forEach(choice => {
                     const button = document.createElement('button');
                     button.className = 'choice-btn';
@@ -301,29 +316,21 @@
                 const total = this.empathy + this.etiquette;
                 let title = "";
                 let evaluation = "";
-                let bgGradient = "";
 
                 if (total >= 70) {
                     title = "인간 보일러 🌡️ (온도 100°C)";
                     evaluation = "당신이 머문 곳은 항상 봄날이군요. 탁월한 공감력과 세심한 예절로 주변 사람들의 하루를 치유하는 마법사 같은 분입니다.";
-                    bgGradient = "#fff5eb";
                 } else if (total >= 40) {
                     title = "따뜻한 미소 😊 (온도 36.5°C)";
                     evaluation = "지킬 예의를 지키고 남의 마음을 헤아릴 줄 아는 표준적이고 온화한 분입니다. 당신 덕분에 세상이 조금 더 살만해집니다.";
-                    bgGradient = "#f6fbf7";
                 } else {
                     title = "차가운 도시인 🧊 (온도 10°C)";
                     evaluation = "악의는 없지만 가끔은 타인의 시선이나 상처에 무감각한 편입니다. 한 번만 먼저 말을 건네보는 건 어떨까요?";
-                    bgGradient = "#f0f4f8";
                 }
-
-                // 배경색을 결과에 따라 변형
-                document.body.style.backgroundColor = bgGradient;
 
                 this.dialogueEl.innerHTML = `<strong style="font-size: 1.3rem; color: var(--primary-color);">${title}</strong><br><br>${evaluation}`;
                 this.choicesEl.innerHTML = '';
 
-                // 다시 시작 버튼
                 const restartBtn = document.createElement('button');
                 restartBtn.className = 'choice-btn';
                 restartBtn.style.textAlign = 'center';
@@ -332,14 +339,12 @@
                     this.empathy = 0;
                     this.etiquette = 0;
                     this.currentId = 'start';
-                    document.body.style.backgroundColor = 'var(--bg-color)';
                     this.render();
                 });
                 this.choicesEl.appendChild(restartBtn);
             }
         }
 
-        // DOM 로드 후 게임 기동
         window.addEventListener('DOMContentLoaded', () => {
             const game = new HeartEngine();
             game.init();
